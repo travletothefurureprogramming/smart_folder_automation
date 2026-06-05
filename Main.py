@@ -66,8 +66,9 @@ class MyHandler(FileSystemEventHandler):
 
 def select_folder():
     folder = select_folder_option.get()
-    if folder == "Downloads":
-        path_to_track = f"C:/Users/{user}/Downloads" 
+    action = select_action.get()
+    if action == "Track":
+        path_to_track = f"C:/Users/{user}/{folder}" 
     
         event_handler = MyHandler()
         observer = Observer()
@@ -77,7 +78,7 @@ def select_folder():
         
         notification.notify(
             title="Smart Folder Automation",
-            message="🚀 Η live παρακολούθηση των Downloads ξεκίνησε!",
+            message=f"🚀 Η live παρακολούθηση των {folder} ξεκίνησε!",
             timeout=3
         )
         
@@ -90,8 +91,8 @@ def select_folder():
             observer.stop()
         observer.join()
     else:
-        path_to_track = f"C:/Users/{user}/Desktop" 
-        print(f"🧹 Καθαρισμός Desktop στο: {path_to_track}")
+        path_to_track = f"C:/Users/{user}/{folder}" 
+        print(f"🧹 Καθαρισμός {folder} στο: {path_to_track}")
         
         moved_count = 0  # Μετρητής για το notification
 
@@ -114,11 +115,11 @@ def select_folder():
                     final_path = get_unique_path(dest_dir, file_name)
                     shutil.move(full_file_path, final_path)
                     moved_count += 1
-                    print(f"🧹 Μετακινήθηκε από Desktop: {os.path.basename(final_path)}")
+                    print(f"🧹 Μετακινήθηκε από {folder}: {os.path.basename(final_path)}")
         
         # Ειδοποίηση για τη μαζική εκκαθάριση του Desktop
         notification.notify(
-            title="Desktop Cleaned!",
+            title=f"{folder} Cleaned!",
             message=f"🧹 Ολοκληρώθηκε ο καθαρισμός. Μεταφέρθηκαν {moved_count} αρχεία!",
             timeout=5
         )
@@ -131,6 +132,8 @@ app = ctk.CTk()
 app.title("Smart Folder Automation Hub")
 app.geometry("300x300")
 
+select_action = ctk.CTkOptionMenu(app, values=["Track", "Organize"])
+select_action.pack(pady=20)
 
 select_folder_option = ctk.CTkOptionMenu(app, values=["Downloads", "Desktop"])
 select_folder_option.pack(pady=20)
