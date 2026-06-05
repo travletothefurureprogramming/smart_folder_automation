@@ -7,11 +7,14 @@ import customtkinter as ctk
 import threading
 from plyer import notification
 
-user = 'gregi'
+user = os.path.expanduser('~')
 documents = [".pdf", '.docx', '.doc', '.txt']
 images = ['.jpg', '.png', '.jpeg', '.gif', '.tif', '.tiff', 'svg']
 videos = ['.mp4', '.avi', '.mov', '.wmv', '.flv']
 audio = ['.mp3', '.wav', '.flac', '.aac']
+
+observer = Observer()
+
 
 def get_unique_path(destination_folder, file_name):
     base_name, extension = os.path.splitext(file_name)
@@ -27,7 +30,7 @@ def get_unique_path(destination_folder, file_name):
 
 def write_log(event):
     with open("automation_log.txt",'a') as f:
-        f.write(event)
+        f.write(f"{event}\n")
 
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
@@ -76,7 +79,6 @@ def select_folder():
         path_to_track = f"C:/Users/{user}/{folder}" 
     
         event_handler = MyHandler()
-        observer = Observer()
         observer.schedule(event_handler, path=path_to_track, recursive=False)
     
         print(f"Παρακολούθηση ξεκίνησε στο: {path_to_track}")
@@ -146,7 +148,10 @@ select_action.pack(pady=20)
 select_folder_option = ctk.CTkOptionMenu(app, values=["Downloads", "Desktop"])
 select_folder_option.pack(pady=20)
 
-start_btn = ctk.CTkButton(app, text="Start Organize", command=thread_select_folder)
+start_btn = ctk.CTkButton(app, text="Start Organize/Track", command=thread_select_folder)
+start_btn.pack(pady=20)
+
+start_btn = ctk.CTkButton(app, text="Stop track", command=observer.stop)
 start_btn.pack(pady=20)
 
 app.mainloop()
