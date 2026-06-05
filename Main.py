@@ -25,6 +25,10 @@ def get_unique_path(destination_folder, file_name):
         
     return destination_path
 
+def write_log(event):
+    with open("automation_log.txt",'a') as f:
+        f.write(event)
+
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if not event.is_directory:
@@ -61,6 +65,7 @@ class MyHandler(FileSystemEventHandler):
                     app_name="FolderApp",
                     timeout=5 
                 )                  
+                write_log(f"🎉 Νέο αρχείο ταξινομήθηκε: {os.path.basename(final_path)}")
                 print(f"🎉 Νέο αρχείο ταξινομήθηκε: {os.path.basename(final_path)}")
                 print("-" * 30)
 
@@ -75,6 +80,7 @@ def select_folder():
         observer.schedule(event_handler, path=path_to_track, recursive=False)
     
         print(f"Παρακολούθηση ξεκίνησε στο: {path_to_track}")
+        write_log(f"Παρακολούθηση ξεκίνησε στο: {path_to_track}")
         
         notification.notify(
             title="Smart Folder Automation",
@@ -115,6 +121,7 @@ def select_folder():
                     final_path = get_unique_path(dest_dir, file_name)
                     shutil.move(full_file_path, final_path)
                     moved_count += 1
+                    write_log(f"🧹 Μετακινήθηκε από {folder}: {os.path.basename(final_path)}")
                     print(f"🧹 Μετακινήθηκε από {folder}: {os.path.basename(final_path)}")
         
         # Ειδοποίηση για τη μαζική εκκαθάριση του Desktop
@@ -123,6 +130,7 @@ def select_folder():
             message=f"🧹 Ολοκληρώθηκε ο καθαρισμός. Μεταφέρθηκαν {moved_count} αρχεία!",
             timeout=5
         )
+        write_log(f"🧹 Ολοκληρώθηκε ο καθαρισμός. Μεταφέρθηκαν {moved_count} αρχεία!")
 
 def thread_select_folder():
     threading.Thread(target=select_folder, daemon=True).start()
