@@ -6,15 +6,26 @@ import shutil
 import customtkinter as ctk
 import threading
 from plyer import notification
+import pystray
+from PIL import Image
 
-user = os.path.expanduser('~')
+# Το os.path.expanduser('~') παίρνει όλο το "C:/Users/gregi"
+user_home = os.path.expanduser('~')
+
 documents = [".pdf", '.docx', '.doc', '.txt']
 images = ['.jpg', '.png', '.jpeg', '.gif', '.tif', '.tiff', 'svg']
 videos = ['.mp4', '.avi', '.mov', '.wmv', '.flv']
 audio = ['.mp3', '.wav', '.flac', '.aac']
 
-observer = Observer()
+# Global μεταβλητές για τον έλεγχο του watchdog
+observer = None
+is_tracking = False
 
+# Δημιουργία ενός απλού icon σε περίπτωση που λείπει το αρχείο 'folder.png'
+if os.path.exists('folder.png'):
+    tray_image = Image.open('folder.png')
+else:
+    tray_image = Image.new('RGB', (64, 64), color='blue')
 
 def get_unique_path(destination_folder, file_name):
     base_name, extension = os.path.splitext(file_name)
@@ -29,8 +40,8 @@ def get_unique_path(destination_folder, file_name):
     return destination_path
 
 def write_log(event):
-    with open("automation_log.txt",'a') as f:
-        f.write(f"{event}\n")
+    with open("automation_log.txt", 'a', encoding="utf-8") as f:
+        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {event}\n")
 
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
@@ -48,19 +59,21 @@ class MyHandler(FileSystemEventHandler):
 
             dest_dir = None
             if file_extension in documents:
-                dest_dir = f"C:/Users/{user}/Documents"
+                dest_dir = os.path.join(user_home, "Documents")
             elif file_extension in images:
-                dest_dir = f"C:/Users/{user}/Pictures"
+                dest_dir = os.path.join(user_home, "Pictures")
             elif file_extension in videos:
-                dest_dir = f"C:/Users/{user}/Videos"
+                dest_dir = os.path.join(user_home, "Videos")
             elif file_extension in audio:
-                dest_dir = f"C:/Users/{user}/Music"
+                dest_dir = os.path.join(user_home, "Music")
 
             if dest_dir:
+                if not os.path.exists(dest_dir):
+                    os.makedirs(dest_dir)
+                    
                 final_path = get_unique_path(dest_dir, file_name)
                 shutil.move(full_path, final_path)
                 
-                # Καθαρισμός του μηνύματος για να δείχνει μόνο το όνομα του φακέλου (π.txt. Pictures)
                 folder_name = os.path.basename(dest_dir)
                 notification.notify(
                     title="Smart Folder Automation",
@@ -68,21 +81,26 @@ class MyHandler(FileSystemEventHandler):
                     app_name="FolderApp",
                     timeout=5 
                 )                  
-                write_log(f"🎉 Νέο αρχείο ταξινομήθηκε: {os.path.basename(final_path)}")
+                write_log(f"🎉 LIVE: Ταξινομήθηκε το {file_name} -> {folder_name}")
                 print(f"🎉 Νέο αρχείο ταξινομήθηκε: {os.path.basename(final_path)}")
-                print("-" * 30)
 
 def select_folder():
+    global observer, is_tracking
     folder = select_folder_option.get()
     action = select_action.get()
-    if action == "Track":
-        path_to_track = f"C:/Users/{user}/{folder}" 
+    path_to_track = os.path.join(user_home, folder)
     
+    if action == "Track":
+        if is_tracking:
+            print("⚠️ Η παρακολούθηση τρέχει ήδη!")
+            return
+            
         event_handler = MyHandler()
+        observer = Observer()  # Δημιουργούμε νέο instance κάθε φορά
         observer.schedule(event_handler, path=path_to_track, recursive=False)
     
-        print(f"Παρακολούθηση ξεκίνησε στο: {path_to_track}")
-        write_log(f"Παρακολούθηση ξεκίνησε στο: {path_to_track}")
+        print(f"🚀 Παρακολούθηση ξεκίνησε στο: {path_to_track}")
+        write_log(f"SYSTEM: Ξεκίνησε live παρακολούθηση στο {path_to_track}")
         
         notification.notify(
             title="Smart Folder Automation",
@@ -90,19 +108,20 @@ def select_folder():
             timeout=3
         )
         
+        is_tracking = True
+        status_label.configure(text=f"Status: Tracking {folder}", text_color="green")
         observer.start()
     
         try:
-            while True:
+            while is_tracking:
                 time.sleep(1)
         except KeyboardInterrupt:
-            observer.stop()
-        observer.join()
+            pass
     else:
-        path_to_track = f"C:/Users/{user}/{folder}" 
+        # ORGANIZE LOGIC
         print(f"🧹 Καθαρισμός {folder} στο: {path_to_track}")
-        
-        moved_count = 0  # Μετρητής για το notification
+        write_log(f"SYSTEM: Μη αυτόματος καθαρισμός στο {path_to_track}")
+        moved_count = 0
 
         for (root, dirs, files) in os.walk(path_to_track):
             for file_name in files:
@@ -111,47 +130,92 @@ def select_folder():
                 
                 dest_dir = None
                 if file_extension in documents:
-                    dest_dir = f"C:/Users/{user}/Documents"
+                    dest_dir = os.path.join(user_home, "Documents")
                 elif file_extension in images:
-                    dest_dir = f"C:/Users/{user}/Pictures"
+                    dest_dir = os.path.join(user_home, "Pictures")
                 elif file_extension in videos:
-                    dest_dir = f"C:/Users/{user}/Videos"
+                    dest_dir = os.path.join(user_home, "Videos")
                 elif file_extension in audio:
-                    dest_dir = f"C:/Users/{user}/Music"
+                    dest_dir = os.path.join(user_home, "Music")
 
                 if dest_dir:
+                    if not os.path.exists(dest_dir):
+                        os.makedirs(dest_dir)
                     final_path = get_unique_path(dest_dir, file_name)
                     shutil.move(full_file_path, final_path)
                     moved_count += 1
-                    write_log(f"🧹 Μετακινήθηκε από {folder}: {os.path.basename(final_path)}")
-                    print(f"🧹 Μετακινήθηκε από {folder}: {os.path.basename(final_path)}")
+                    write_log(f"🧹 MANUAL: Μετακινήθηκε το {file_name}")
         
-        # Ειδοποίηση για τη μαζική εκκαθάριση του Desktop
         notification.notify(
             title=f"{folder} Cleaned!",
             message=f"🧹 Ολοκληρώθηκε ο καθαρισμός. Μεταφέρθηκαν {moved_count} αρχεία!",
             timeout=5
         )
-        write_log(f"🧹 Ολοκληρώθηκε ο καθαρισμός. Μεταφέρθηκαν {moved_count} αρχεία!")
+        status_label.configure(text="Status: Clean Finished", text_color="blue")
+
+def stop_tracking():
+    global observer, is_tracking
+    if is_tracking and observer:
+        is_tracking = False
+        observer.stop()
+        observer.join()
+        print("🛑 Η παρακολούθηση σταμάτησε.")
+        write_log("SYSTEM: Η παρακολούθηση σταμάτησε από τον χρήστη.")
+        status_label.configure(text="Status: Stopped", text_color="red")
+    else:
+        print("⚠️ Δεν υπάρχει ενεργή παρακολούθηση για να σταματήσει.")
 
 def thread_select_folder():
     threading.Thread(target=select_folder, daemon=True).start()
 
+# --- System Tray Logic ---
+def check_menu(icon, item):
+    if str(item) == "Open":
+        # Εμφάνιση ξανά του παραθύρου
+        app.deiconify()
+    elif str(item) == "Exit":
+        stop_tracking()
+        icon.stop()
+        app.quit() # Κλείνει τελείως το CustomTkinter
+
+def run_tray():
+    menu = pystray.Menu(pystray.MenuItem("Open", check_menu), pystray.MenuItem("Exit", check_menu))
+    icon = pystray.Icon("FolderOrganizer", tray_image, "Folder Organizer", menu)
+    icon.run()
+
+# Κλείσιμο παραθύρου στο Tray αντί για τερματισμό
+def withdraw_window():
+    app.withdraw() # Κρύβει το παράθυρο αλλά η εφαρμογή συνεχίζει να τρέχει
+    notification.notify(
+        title="Smart Folder Automation",
+        message="Η εφαρμογή εκτελείται στο background (System Tray)!",
+        timeout=3
+    )
+
 # --- UI Setup ---
 app = ctk.CTk()
 app.title("Smart Folder Automation Hub")
-app.geometry("300x300")
+app.geometry("350x350")
+app.protocol('WM_DELETE_WINDOW', withdraw_window) # Όταν πατάς το 'X', κρύβεται στο tray
 
 select_action = ctk.CTkOptionMenu(app, values=["Track", "Organize"])
-select_action.pack(pady=20)
+select_action.pack(pady=15)
 
 select_folder_option = ctk.CTkOptionMenu(app, values=["Downloads", "Desktop"])
-select_folder_option.pack(pady=20)
+select_folder_option.pack(pady=15)
 
-start_btn = ctk.CTkButton(app, text="Start Organize/Track", command=thread_select_folder)
-start_btn.pack(pady=20)
+start_btn = ctk.CTkButton(app, text="Start Action", command=thread_select_folder, fg_color="green", hover_color="darkgreen")
+start_btn.pack(pady=10)
 
-start_btn = ctk.CTkButton(app, text="Stop track", command=observer.stop)
-start_btn.pack(pady=20)
+stop_btn = ctk.CTkButton(app, text="Stop Track", command=stop_tracking, fg_color="red", hover_color="darkred")
+stop_btn.pack(pady=10)
 
-app.mainloop()
+status_label = ctk.CTkLabel(app, text="Status: Idle", font=("Arial", 12, "italic"))
+status_label.pack(pady=10)
+
+if __name__ == "__main__":
+    # Ξεκινάμε το System Tray σε δικό του thread για να μην μπλοκάρει το UI
+    threading.Thread(target=run_tray, daemon=True).start()
+    
+    # Το κεντρικό loop του CustomTkinter τρέχει στο Main Thread
+    app.mainloop()
