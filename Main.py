@@ -8,24 +8,58 @@ import threading
 from plyer import notification
 import pystray
 from PIL import Image
-
-# Το os.path.expanduser('~') παίρνει όλο το "C:/Users/gregi"
-user_home = os.path.expanduser('~')
-
-documents = [".pdf", '.docx', '.doc', '.txt']
-images = ['.jpg', '.png', '.jpeg', '.gif', '.tif', '.tiff', 'svg']
-videos = ['.mp4', '.avi', '.mov', '.wmv', '.flv']
-audio = ['.mp3', '.wav', '.flac', '.aac']
+import json
 
 # Global μεταβλητές για τον έλεγχο του watchdog
 observer = None
 is_tracking = False
+
+# Το os.path.expanduser('~') παίρνει όλο το "C:/Users/username"
+user_home = os.path.expanduser('~')
 
 # Δημιουργία ενός απλού icon σε περίπτωση που λείπει το αρχείο 'folder.png'
 if os.path.exists('folder.png'):
     tray_image = Image.open('folder.png')
 else:
     tray_image = Image.new('RGB', (64, 64), color='blue')
+
+# --- Συναρτήσεις Διαχείρισης Κανόνων (JSON) ---
+
+def load_rules():
+    if not os.path.exists('rules.json'):
+        return []
+    with open('rules.json', 'r', encoding='utf-8') as file:
+        try:
+            return json.load(file)
+        except json.JSONDecodeError:
+            return []
+
+def match_rule_and_get_dest(file_name):
+    """
+    Ελέγχει το αρχείο με βάση όλους τους κανόνες και επιστρέφει 
+    τον προορισμό και τον τύπο του κανόνα που ταίριαξε.
+    """
+    rules = load_rules()
+    base_name, file_extension = os.path.splitext(file_name)
+    
+    # 1ος Έλεγχος: name_starts
+    for rule in rules:
+        if rule.get('condition') == 'name_starts' and file_name.startswith(rule['value']):
+            return rule['destination']
+            
+    # 2ος Έλεγχος: name_contains
+    for rule in rules:
+        if rule.get('condition') == 'name_contains' and rule['value'] in file_name:
+            return rule['destination']
+            
+    # 3ος Έλεγχος: extension
+    for rule in rules:
+        if rule.get('condition') == 'extension' and rule['value'] == file_extension:
+            return rule['destination']
+            
+    return None
+
+# --- Βοηθητικές Συναρτήσεις ---
 
 def get_unique_path(destination_folder, file_name):
     base_name, extension = os.path.splitext(file_name)
@@ -43,46 +77,55 @@ def write_log(event):
     with open("automation_log.txt", 'a', encoding="utf-8") as f:
         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {event}\n")
 
+def process_file(full_path, file_name):
+    """Κοινή λογική μετακίνησης για Live Tracking & Manual Organize"""
+    _, file_extension = os.path.splitext(file_name)
+
+    # Παράβλεψη προσωρινών αρχείων λήψης
+    if file_extension in ['.tmp', '.crdownload', '.part'] or file_name.startswith('.'):
+        return False
+
+    time.sleep(1) # Αναμονή για να ολοκληρωθεί η γραφή του αρχείου
+    if not os.path.exists(full_path):
+        return False
+
+    destination_rel = match_rule_and_get_dest(file_name)
+    
+    if destination_rel:
+        dest_dir = os.path.join(user_home, destination_rel)
+        if not os.path.exists(dest_dir):
+            os.makedirs(dest_dir)
+            
+        final_path = get_unique_path(dest_dir, file_name)
+        try:
+            shutil.move(full_path, final_path)
+            folder_name = os.path.basename(dest_dir)
+            
+            # Ειδοποίηση
+            notification.notify(
+                title="Smart Folder Automation",
+                message=f"🎉 Το αρχείο {file_name} μεταφέρθηκε στα {folder_name}!",
+                app_name="FolderApp",
+                timeout=5 
+            )                  
+            write_log(f"🎉 AUTOMATION: Ταξινομήθηκε το {file_name} -> {folder_name}")
+            print(f"🎉 Νέο αρχείο ταξινομήθηκε: {os.path.basename(final_path)}")
+            return True
+        except Exception as e:
+            print(f"❌ Σφάλμα κατά τη μετακίνηση του {file_name}: {e}")
+            return False
+    return False
+
+# --- Watchdog Handler ---
+
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if not event.is_directory:
             full_path = event.src_path
             file_name = os.path.basename(full_path)
-            _, file_extension = os.path.splitext(file_name)
+            process_file(full_path, file_name)
 
-            if file_extension in ['.tmp', '.crdownload', '.part']:
-                return
-
-            time.sleep(1)
-            if not os.path.exists(full_path):
-                return
-
-            dest_dir = None
-            if file_extension in documents:
-                dest_dir = os.path.join(user_home, "Documents")
-            elif file_extension in images:
-                dest_dir = os.path.join(user_home, "Pictures")
-            elif file_extension in videos:
-                dest_dir = os.path.join(user_home, "Videos")
-            elif file_extension in audio:
-                dest_dir = os.path.join(user_home, "Music")
-
-            if dest_dir:
-                if not os.path.exists(dest_dir):
-                    os.makedirs(dest_dir)
-                    
-                final_path = get_unique_path(dest_dir, file_name)
-                shutil.move(full_path, final_path)
-                
-                folder_name = os.path.basename(dest_dir)
-                notification.notify(
-                    title="Smart Folder Automation",
-                    message=f"🎉 Το αρχείο {file_name} μεταφέρθηκε στα {folder_name}!",
-                    app_name="FolderApp",
-                    timeout=5 
-                )                  
-                write_log(f"🎉 LIVE: Ταξινομήθηκε το {file_name} -> {folder_name}")
-                print(f"🎉 Νέο αρχείο ταξινομήθηκε: {os.path.basename(final_path)}")
+# --- Κύρια Λογική UI Actions ---
 
 def select_folder():
     global observer, is_tracking
@@ -96,7 +139,7 @@ def select_folder():
             return
             
         event_handler = MyHandler()
-        observer = Observer()  # Δημιουργούμε νέο instance κάθε φορά
+        observer = Observer()
         observer.schedule(event_handler, path=path_to_track, recursive=False)
     
         print(f"🚀 Παρακολούθηση ξεκίνησε στο: {path_to_track}")
@@ -111,40 +154,21 @@ def select_folder():
         is_tracking = True
         status_label.configure(text=f"Status: Tracking {folder}", text_color="green")
         observer.start()
-    
-        try:
-            while is_tracking:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            pass
+        
     else:
-        # ORGANIZE LOGIC
+        # ORGANIZE LOGIC (Manual)
         print(f"🧹 Καθαρισμός {folder} στο: {path_to_track}")
         write_log(f"SYSTEM: Μη αυτόματος καθαρισμός στο {path_to_track}")
         moved_count = 0
 
-        for (root, dirs, files) in os.walk(path_to_track):
-            for file_name in files:
-                full_file_path = os.path.join(root, file_name)
-                _, file_extension = os.path.splitext(file_name)
-                
-                dest_dir = None
-                if file_extension in documents:
-                    dest_dir = os.path.join(user_home, "Documents")
-                elif file_extension in images:
-                    dest_dir = os.path.join(user_home, "Pictures")
-                elif file_extension in videos:
-                    dest_dir = os.path.join(user_home, "Videos")
-                elif file_extension in audio:
-                    dest_dir = os.path.join(user_home, "Music")
-
-                if dest_dir:
-                    if not os.path.exists(dest_dir):
-                        os.makedirs(dest_dir)
-                    final_path = get_unique_path(dest_dir, file_name)
-                    shutil.move(full_file_path, final_path)
-                    moved_count += 1
-                    write_log(f"🧹 MANUAL: Μετακινήθηκε το {file_name}")
+        # os.scandir για καλύτερη απόδοση αντί για os.walk αν δεν θες υποφακέλους
+        try:
+            for entry in os.scandir(path_to_track):
+                if entry.is_file():
+                    if process_file(entry.path, entry.name):
+                        moved_count += 1
+        except Exception as e:
+            print(f"❌ Σφάλμα κατά την ανάγνωση του φακέλου: {e}")
         
         notification.notify(
             title=f"{folder} Cleaned!",
@@ -169,40 +193,83 @@ def thread_select_folder():
     threading.Thread(target=select_folder, daemon=True).start()
 
 # --- System Tray Logic ---
+
 def check_menu(icon, item):
     if str(item) == "Open":
-        # Εμφάνιση ξανά του παραθύρου
         app.deiconify()
     elif str(item) == "Exit":
         stop_tracking()
         icon.stop()
-        app.quit() # Κλείνει τελείως το CustomTkinter
+        app.quit()
 
 def run_tray():
     menu = pystray.Menu(pystray.MenuItem("Open", check_menu), pystray.MenuItem("Exit", check_menu))
     icon = pystray.Icon("FolderOrganizer", tray_image, "Folder Organizer", menu)
     icon.run()
 
-# Κλείσιμο παραθύρου στο Tray αντί για τερματισμό
 def withdraw_window():
-    app.withdraw() # Κρύβει το παράθυρο αλλά η εφαρμογή συνεχίζει να τρέχει
+    app.withdraw()
     notification.notify(
         title="Smart Folder Automation",
         message="Η εφαρμογή εκτελείται στο background (System Tray)!",
         timeout=3
     )
 
+    
+
+def add_rules_window():
+    def add_rules():
+        condition = select_condition.get()
+        value = select_value.get()
+        destination = select_destination.get()
+
+        data = {"condition": condition, "value": value,"destination": destination}
+
+        with open("rules.json", "r", encoding="utf-8") as file:
+         rules = json.load(file)
+
+        rules.append(data)
+
+        with open('rules.json', "w", encoding="utf-8") as file:
+            json.dump(rules, file, indent=4, ensure_ascii=False)
+
+        
+    app = ctk.CTk()
+    app.title("Smart Folder Automation Hub - Add Rules")
+    app.geometry("350x350")
+
+    select_condition = ctk.CTkOptionMenu(app,values=['extension','name_starts','name_contains'])
+    select_condition.pack(pady=20)
+
+    select_value = ctk.CTkEntry(app,placeholder_text="Select Value: .mp3, report.......")    
+    select_value.pack(pady=20)
+
+    select_destination = ctk.CTkEntry(app,placeholder_text="Select destination(It must be a folder name in User)")
+    select_destination.pack(pady=20)
+
+    add_btn = ctk.CTkButton(app,text="Add",command=add_rules)
+    add_btn.pack(pady=20)
+
+    app.mainloop()
+
+
+
+
 # --- UI Setup ---
 app = ctk.CTk()
+
 app.title("Smart Folder Automation Hub")
 app.geometry("350x350")
-app.protocol('WM_DELETE_WINDOW', withdraw_window) # Όταν πατάς το 'X', κρύβεται στο tray
+app.protocol('WM_DELETE_WINDOW', withdraw_window)
 
 select_action = ctk.CTkOptionMenu(app, values=["Track", "Organize"])
 select_action.pack(pady=15)
 
 select_folder_option = ctk.CTkOptionMenu(app, values=["Downloads", "Desktop"])
 select_folder_option.pack(pady=15)
+
+add_rules_btn = ctk.CTkButton(app,text="Add Rules",command=add_rules_window)
+add_rules_btn.pack(pady=20)
 
 start_btn = ctk.CTkButton(app, text="Start Action", command=thread_select_folder, fg_color="green", hover_color="darkgreen")
 start_btn.pack(pady=10)
@@ -213,9 +280,7 @@ stop_btn.pack(pady=10)
 status_label = ctk.CTkLabel(app, text="Status: Idle", font=("Arial", 12, "italic"))
 status_label.pack(pady=10)
 
+
 if __name__ == "__main__":
-    # Ξεκινάμε το System Tray σε δικό του thread για να μην μπλοκάρει το UI
     threading.Thread(target=run_tray, daemon=True).start()
-    
-    # Το κεντρικό loop του CustomTkinter τρέχει στο Main Thread
     app.mainloop()
