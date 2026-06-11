@@ -1,5 +1,5 @@
 # SMART FOLDER AUTOMATION HUB
-## A smart open-source tool with Python which is running in backgroud and organize automatic the Downloads folder
+#### A smart open-source tool with Python which is running in backgroud and organize automatic the Downloads and Desktop folders.
 
 ### Platform Support
 
