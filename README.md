@@ -30,6 +30,15 @@
 1. Download the release from github( All files: Main.exe, rules.json, automation_log.txt
 2. Open the .exe and organize your life
 
+#### For Developers (Running from Source):
+
+1. Clone the repo: git clone [https://github.com/travletothefurureprogramming/smart_folder_automation](https://github.com/travletothefurureprogramming/smart_folder_automation)
+
+2. Install requirements: pip install watchdog customtkinter
+
+3. Run: cd source
+   
+4. Run: python Main.py
 
 ### Key Quality of Life Improvements
 The Smart Folder Automation Hub is designed to eliminate digital clutter and streamline your workflow through three core pillars:
