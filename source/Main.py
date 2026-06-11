@@ -10,20 +10,15 @@ import pystray
 from PIL import Image
 import json
 
-# Global μεταβλητές για τον έλεγχο του watchdog
 observer = None
 is_tracking = False
 
-# Το os.path.expanduser('~') παίρνει όλο το "C:/Users/username"
 user_home = os.path.expanduser('~')
 
-# Δημιουργία ενός απλού icon σε περίπτωση που λείπει το αρχείο 'folder.png'
 if os.path.exists('folder.png'):
     tray_image = Image.open('folder.png')
 else:
     tray_image = Image.new('RGB', (64, 64), color='blue')
-
-# --- Συναρτήσεις Διαχείρισης Κανόνων (JSON) ---
 
 def load_rules():
     if not os.path.exists('rules.json'):
@@ -35,31 +30,22 @@ def load_rules():
             return []
 
 def match_rule_and_get_dest(file_name):
-    """
-    Ελέγχει το αρχείο με βάση όλους τους κανόνες και επιστρέφει 
-    τον προορισμό και τον τύπο του κανόνα που ταίριαξε.
-    """
     rules = load_rules()
     base_name, file_extension = os.path.splitext(file_name)
     
-    # 1ος Έλεγχος: name_starts
     for rule in rules:
         if rule.get('condition') == 'name_starts' and file_name.startswith(rule['value']):
             return rule['destination']
             
-    # 2ος Έλεγχος: name_contains
     for rule in rules:
         if rule.get('condition') == 'name_contains' and rule['value'] in file_name:
             return rule['destination']
             
-    # 3ος Έλεγχος: extension
     for rule in rules:
         if rule.get('condition') == 'extension' and rule['value'] == file_extension:
             return rule['destination']
             
     return None
-
-# --- Βοηθητικές Συναρτήσεις ---
 
 def get_unique_path(destination_folder, file_name):
     base_name, extension = os.path.splitext(file_name)
@@ -78,14 +64,12 @@ def write_log(event):
         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {event}\n")
 
 def process_file(full_path, file_name):
-    """Κοινή λογική μετακίνησης για Live Tracking & Manual Organize"""
     _, file_extension = os.path.splitext(file_name)
 
-    # Παράβλεψη προσωρινών αρχείων λήψης
     if file_extension in ['.tmp', '.crdownload', '.part'] or file_name.startswith('.'):
         return False
 
-    time.sleep(1) # Αναμονή για να ολοκληρωθεί η γραφή του αρχείου
+    time.sleep(1) 
     if not os.path.exists(full_path):
         return False
 
@@ -101,13 +85,12 @@ def process_file(full_path, file_name):
             shutil.move(full_path, final_path)
             folder_name = os.path.basename(dest_dir)
             
-            # Ειδοποίηση
             notification.notify(
                 title="Smart Folder Automation",
                 message=f"🎉 Το αρχείο {file_name} μεταφέρθηκε στα {folder_name}!",
                 app_name="FolderApp",
                 timeout=5 
-            )                  
+            )            
             write_log(f"🎉 AUTOMATION: Ταξινομήθηκε το {file_name} -> {folder_name}")
             print(f"🎉 Νέο αρχείο ταξινομήθηκε: {os.path.basename(final_path)}")
             return True
@@ -116,16 +99,12 @@ def process_file(full_path, file_name):
             return False
     return False
 
-# --- Watchdog Handler ---
-
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if not event.is_directory:
             full_path = event.src_path
             file_name = os.path.basename(full_path)
             process_file(full_path, file_name)
-
-# --- Κύρια Λογική UI Actions ---
 
 def select_folder():
     global observer, is_tracking
@@ -156,12 +135,10 @@ def select_folder():
         observer.start()
         
     else:
-        # ORGANIZE LOGIC (Manual)
         print(f"🧹 Καθαρισμός {folder} στο: {path_to_track}")
         write_log(f"SYSTEM: Μη αυτόματος καθαρισμός στο {path_to_track}")
         moved_count = 0
 
-        # os.scandir για καλύτερη απόδοση αντί για os.walk αν δεν θες υποφακέλους
         try:
             for entry in os.scandir(path_to_track):
                 if entry.is_file():
@@ -192,8 +169,6 @@ def stop_tracking():
 def thread_select_folder():
     threading.Thread(target=select_folder, daemon=True).start()
 
-# --- System Tray Logic ---
-
 def check_menu(icon, item):
     if str(item) == "Open":
         app.deiconify()
@@ -215,8 +190,6 @@ def withdraw_window():
         timeout=3
     )
 
-    
-
 def add_rules_window():
     def add_rules():
         condition = select_condition.get()
@@ -226,36 +199,31 @@ def add_rules_window():
         data = {"condition": condition, "value": value,"destination": destination}
 
         with open("rules.json", "r", encoding="utf-8") as file:
-         rules = json.load(file)
+            rules = json.load(file)
 
         rules.append(data)
 
         with open('rules.json', "w", encoding="utf-8") as file:
             json.dump(rules, file, indent=4, ensure_ascii=False)
-
         
-    app = ctk.CTk()
-    app.title("Smart Folder Automation Hub - Add Rules")
-    app.geometry("350x350")
+    app_rules = ctk.CTk()
+    app_rules.title("Smart Folder Automation Hub - Add Rules")
+    app_rules.geometry("350x350")
 
-    select_condition = ctk.CTkOptionMenu(app,values=['extension','name_starts','name_contains'])
+    select_condition = ctk.CTkOptionMenu(app_rules, values=['extension','name_starts','name_contains'])
     select_condition.pack(pady=20)
 
-    select_value = ctk.CTkEntry(app,placeholder_text="Select Value: .mp3, report.......")    
+    select_value = ctk.CTkEntry(app_rules, placeholder_text="Select Value: .mp3, report.......")    
     select_value.pack(pady=20)
 
-    select_destination = ctk.CTkEntry(app,placeholder_text="Select destination(It must be a folder name in User)")
+    select_destination = ctk.CTkEntry(app_rules, placeholder_text="Select destination(It must be a folder name in User)")
     select_destination.pack(pady=20)
 
-    add_btn = ctk.CTkButton(app,text="Add",command=add_rules)
+    add_btn = ctk.CTkButton(app_rules, text="Add", command=add_rules)
     add_btn.pack(pady=20)
 
-    app.mainloop()
+    app_rules.mainloop()
 
-
-
-
-# --- UI Setup ---
 app = ctk.CTk()
 
 app.title("Smart Folder Automation Hub")
@@ -268,7 +236,7 @@ select_action.pack(pady=15)
 select_folder_option = ctk.CTkOptionMenu(app, values=["Downloads", "Desktop"])
 select_folder_option.pack(pady=15)
 
-add_rules_btn = ctk.CTkButton(app,text="Add Rules",command=add_rules_window)
+add_rules_btn = ctk.CTkButton(app, text="Add Rules", command=add_rules_window)
 add_rules_btn.pack(pady=20)
 
 start_btn = ctk.CTkButton(app, text="Start Action", command=thread_select_folder, fg_color="green", hover_color="darkgreen")
@@ -279,7 +247,6 @@ stop_btn.pack(pady=10)
 
 status_label = ctk.CTkLabel(app, text="Status: Idle", font=("Arial", 12, "italic"))
 status_label.pack(pady=10)
-
 
 if __name__ == "__main__":
     threading.Thread(target=run_tray, daemon=True).start()
