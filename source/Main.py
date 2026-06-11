@@ -87,15 +87,15 @@ def process_file(full_path, file_name):
             
             notification.notify(
                 title="Smart Folder Automation",
-                message=f"🎉 Το αρχείο {file_name} μεταφέρθηκε στα {folder_name}!",
+                message=f"🎉 File {file_name} moved to {folder_name}!",
                 app_name="FolderApp",
                 timeout=5 
             )            
-            write_log(f"🎉 AUTOMATION: Ταξινομήθηκε το {file_name} -> {folder_name}")
-            print(f"🎉 Νέο αρχείο ταξινομήθηκε: {os.path.basename(final_path)}")
+            write_log(f"🎉 AUTOMATION: Sorted {file_name} -> {folder_name}")
+            print(f"🎉 New file sorted: {os.path.basename(final_path)}")
             return True
         except Exception as e:
-            print(f"❌ Σφάλμα κατά τη μετακίνηση του {file_name}: {e}")
+            print(f"❌ Error while moving {file_name}: {e}")
             return False
     return False
 
@@ -114,19 +114,19 @@ def select_folder():
     
     if action == "Track":
         if is_tracking:
-            print("⚠️ Η παρακολούθηση τρέχει ήδη!")
+            print("⚠️ Tracking is already running!")
             return
             
         event_handler = MyHandler()
         observer = Observer()
         observer.schedule(event_handler, path=path_to_track, recursive=False)
     
-        print(f"🚀 Παρακολούθηση ξεκίνησε στο: {path_to_track}")
-        write_log(f"SYSTEM: Ξεκίνησε live παρακολούθηση στο {path_to_track}")
+        print(f"🚀 Tracking started at: {path_to_track}")
+        write_log(f"SYSTEM: Started live tracking at {path_to_track}")
         
         notification.notify(
             title="Smart Folder Automation",
-            message=f"🚀 Η live παρακολούθηση των {folder} ξεκίνησε!",
+            message=f"🚀 Live tracking of {folder} started!",
             timeout=3
         )
         
@@ -135,8 +135,8 @@ def select_folder():
         observer.start()
         
     else:
-        print(f"🧹 Καθαρισμός {folder} στο: {path_to_track}")
-        write_log(f"SYSTEM: Μη αυτόματος καθαρισμός στο {path_to_track}")
+        print(f"🧹 Cleaning {folder} at: {path_to_track}")
+        write_log(f"SYSTEM: Manual cleaning at {path_to_track}")
         moved_count = 0
 
         try:
@@ -145,11 +145,11 @@ def select_folder():
                     if process_file(entry.path, entry.name):
                         moved_count += 1
         except Exception as e:
-            print(f"❌ Σφάλμα κατά την ανάγνωση του φακέλου: {e}")
+            print(f"❌ Error while reading folder: {e}")
         
         notification.notify(
             title=f"{folder} Cleaned!",
-            message=f"🧹 Ολοκληρώθηκε ο καθαρισμός. Μεταφέρθηκαν {moved_count} αρχεία!",
+            message=f"🧹 Cleaning complete. Moved {moved_count} files!",
             timeout=5
         )
         status_label.configure(text="Status: Clean Finished", text_color="blue")
@@ -160,11 +160,11 @@ def stop_tracking():
         is_tracking = False
         observer.stop()
         observer.join()
-        print("🛑 Η παρακολούθηση σταμάτησε.")
-        write_log("SYSTEM: Η παρακολούθηση σταμάτησε από τον χρήστη.")
+        print("🛑 Tracking stopped.")
+        write_log("SYSTEM: Tracking stopped by user.")
         status_label.configure(text="Status: Stopped", text_color="red")
     else:
-        print("⚠️ Δεν υπάρχει ενεργή παρακολούθηση για να σταματήσει.")
+        print("⚠️ No active tracking to stop.")
 
 def thread_select_folder():
     threading.Thread(target=select_folder, daemon=True).start()
@@ -186,7 +186,7 @@ def withdraw_window():
     app.withdraw()
     notification.notify(
         title="Smart Folder Automation",
-        message="Η εφαρμογή εκτελείται στο background (System Tray)!",
+        message="App is running in the background (System Tray)!",
         timeout=3
     )
 
@@ -213,10 +213,10 @@ def add_rules_window():
     select_condition = ctk.CTkOptionMenu(app_rules, values=['extension','name_starts','name_contains'])
     select_condition.pack(pady=20)
 
-    select_value = ctk.CTkEntry(app_rules, placeholder_text="Select Value: .mp3, report.......")    
+    select_value = ctk.CTkEntry(app_rules, placeholder_text="Value: .mp3, report.......")    
     select_value.pack(pady=20)
 
-    select_destination = ctk.CTkEntry(app_rules, placeholder_text="Select destination(It must be a folder name in User)")
+    select_destination = ctk.CTkEntry(app_rules, placeholder_text="Destination folder name in User")
     select_destination.pack(pady=20)
 
     add_btn = ctk.CTkButton(app_rules, text="Add", command=add_rules)
