@@ -9,21 +9,18 @@ from plyer import notification
 import pystray
 from PIL import Image
 import json
+import streamlit
 
-# Global μεταβλητές για τον έλεγχο του watchdog
 observer = None
 is_tracking = False
 
-# Το os.path.expanduser('~') παίρνει όλο το "C:/Users/username"
 user_home = os.path.expanduser('~')
 
-# Δημιουργία ενός απλού icon σε περίπτωση που λείπει το αρχείο 'folder.png'
 if os.path.exists('folder.png'):
     tray_image = Image.open('folder.png')
 else:
     tray_image = Image.new('RGB', (64, 64), color='blue')
 
-# --- Συναρτήσεις Διαχείρισης Κανόνων (JSON) ---
 
 def load_rules():
     if not os.path.exists('rules.json'):
@@ -35,31 +32,24 @@ def load_rules():
             return []
 
 def match_rule_and_get_dest(file_name):
-    """
-    Ελέγχει το αρχείο με βάση όλους τους κανόνες και επιστρέφει 
-    τον προορισμό και τον τύπο του κανόνα που ταίριαξε.
-    """
+
     rules = load_rules()
     base_name, file_extension = os.path.splitext(file_name)
     
-    # 1ος Έλεγχος: name_starts
     for rule in rules:
         if rule.get('condition') == 'name_starts' and file_name.startswith(rule['value']):
             return rule['destination']
             
-    # 2ος Έλεγχος: name_contains
     for rule in rules:
         if rule.get('condition') == 'name_contains' and rule['value'] in file_name:
             return rule['destination']
             
-    # 3ος Έλεγχος: extension
     for rule in rules:
         if rule.get('condition') == 'extension' and rule['value'] == file_extension:
             return rule['destination']
             
     return None
 
-# --- Βοηθητικές Συναρτήσεις ---
 
 def get_unique_path(destination_folder, file_name):
     base_name, extension = os.path.splitext(file_name)
@@ -81,11 +71,10 @@ def process_file(full_path, file_name):
     """Κοινή λογική μετακίνησης για Live Tracking & Manual Organize"""
     _, file_extension = os.path.splitext(file_name)
 
-    # Παράβλεψη προσωρινών αρχείων λήψης
     if file_extension in ['.tmp', '.crdownload', '.part'] or file_name.startswith('.'):
         return False
 
-    time.sleep(1) # Αναμονή για να ολοκληρωθεί η γραφή του αρχείου
+    time.sleep(1) 
     if not os.path.exists(full_path):
         return False
 
@@ -101,7 +90,6 @@ def process_file(full_path, file_name):
             shutil.move(full_path, final_path)
             folder_name = os.path.basename(dest_dir)
             
-            # Ειδοποίηση
             notification.notify(
                 title="Smart Folder Automation",
                 message=f"🎉 Το αρχείο {file_name} μεταφέρθηκε στα {folder_name}!",
@@ -116,7 +104,6 @@ def process_file(full_path, file_name):
             return False
     return False
 
-# --- Watchdog Handler ---
 
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
@@ -125,7 +112,6 @@ class MyHandler(FileSystemEventHandler):
             file_name = os.path.basename(full_path)
             process_file(full_path, file_name)
 
-# --- Κύρια Λογική UI Actions ---
 
 def select_folder():
     global observer, is_tracking
@@ -156,12 +142,10 @@ def select_folder():
         observer.start()
         
     else:
-        # ORGANIZE LOGIC (Manual)
         print(f"🧹 Καθαρισμός {folder} στο: {path_to_track}")
         write_log(f"SYSTEM: Μη αυτόματος καθαρισμός στο {path_to_track}")
         moved_count = 0
 
-        # os.scandir για καλύτερη απόδοση αντί για os.walk αν δεν θες υποφακέλους
         try:
             for entry in os.scandir(path_to_track):
                 if entry.is_file():
@@ -192,7 +176,6 @@ def stop_tracking():
 def thread_select_folder():
     threading.Thread(target=select_folder, daemon=True).start()
 
-# --- System Tray Logic ---
 
 def check_menu(icon, item):
     if str(item) == "Open":
@@ -255,7 +238,6 @@ def add_rules_window():
 
 
 
-# --- UI Setup ---
 app = ctk.CTk()
 
 app.title("Smart Folder Automation Hub")
