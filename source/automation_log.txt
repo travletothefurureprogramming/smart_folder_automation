@@ -34,3 +34,94 @@
 [2026-06-06 12:57:20] SYSTEM: Μη αυτόματος καθαρισμός στο C:\Users\gregi\Downloads
 [2026-06-06 12:57:25] SYSTEM: Μη αυτόματος καθαρισμός στο C:\Users\gregi\Downloads
 [2026-06-06 12:57:31] 🎉 AUTOMATION: Ταξινομήθηκε το invoice_example.exe -> Invoices
+[2026-06-17 23:08:41] SYSTEM: Μη αυτόματος καθαρισμός στο C:\Users\gregi\Downloads
+[2026-06-17 23:08:43] 🎉 AUTOMATION: Sorted Add a heading.png -> Pictures
+[2026-06-17 23:08:44] 🎉 AUTOMATION: Sorted aek-athenes-club-logo-symbol-greece-league-football-abstract-design-illustration-with-black-background-free-vector-3470908165.jpg -> Pictures
+[2026-06-17 23:08:45] 🎉 AUTOMATION: Sorted AEK-CHAMPION-1568x1045-155548020.jpg -> Pictures
+[2026-06-17 23:08:47] 🎉 AUTOMATION: Sorted eparavolo (1).pdf -> Documents
+[2026-06-17 23:08:48] 🎉 AUTOMATION: Sorted eparavolo (2).pdf -> Documents
+[2026-06-17 23:08:49] 🎉 AUTOMATION: Sorted eparavolo (3).pdf -> Documents
+[2026-06-17 23:08:50] 🎉 AUTOMATION: Sorted eparavolo.pdf -> Documents
+[2026-06-17 23:08:52] 🎉 AUTOMATION: Sorted IMG-040ef2d1ce15a1ffd87a3e27ca23bf73-V.jpg -> Pictures
+[2026-06-17 23:08:53] 🎉 AUTOMATION: Sorted IMG-1b25ff905c34671230beeac19192597c-V.jpg -> Pictures
+[2026-06-17 23:08:54] 🎉 AUTOMATION: Sorted IMG-a5643e202c713988e98d708cf3adbd12-V.jpg -> Pictures
+[2026-06-17 23:08:55] 🎉 AUTOMATION: Sorted IMG-ce5e1939d5e1b2a0e33e70d1dc533192-V.jpg -> Pictures
+[2026-06-17 23:08:56] 🎉 AUTOMATION: Sorted notes.png -> Pictures
+[2026-06-17 23:08:58] 🎉 AUTOMATION: Sorted pexels-cup-of-couple-8015668.jpg -> Pictures
+[2026-06-17 23:08:59] 🎉 AUTOMATION: Sorted pexels-ekaterina-bolovtsova-6193145.jpg -> Pictures
+[2026-06-17 23:09:00] 🎉 AUTOMATION: Sorted pexels-markusspiske-2004161.jpg -> Pictures
+[2026-06-17 23:09:01] 🎉 AUTOMATION: Sorted pexels-steve-12843342.jpg -> Pictures
+[2026-06-17 23:09:02] 🎉 AUTOMATION: Sorted pexels-tara-winstead-7111494.jpg -> Pictures
+[2026-06-17 23:09:04] 🎉 AUTOMATION: Sorted sample_report.pdf -> Documents
+[2026-06-17 23:09:05] 🎉 AUTOMATION: Sorted ScreenRecording2026-06-07212059-ezgif.com-video-to-gif-converter.gif -> Pictures
+[2026-06-17 23:09:07] 🎉 AUTOMATION: Sorted ΡΑΝΤΕΒΟΥ ΓΙΑΓΙΑ.pdf -> Documents
+[2026-06-17 23:11:24] SYSTEM: Μη αυτόματος καθαρισμός στο C:\Users\gregi\Desktop
+[2026-06-17 23:11:25] 🎉 AUTOMATION: Sorted aek-athenes-club-logo-symbol-greece-league-football-abstract-design-illustration-with-black-background-free-vector-3470908165.jpg -> Pictures
+[2026-06-17 23:11:26] 🎉 AUTOMATION: Sorted AEK-CHAMPION-1568x1045-155548020.jpg -> Pictures
+[2026-06-17 23:11:28] 🎉 AUTOMATION: Sorted basic-text.pdf -> Documents
+[2026-06-17 23:11:29] 🎉 AUTOMATION: Sorted basic-text_1.pdf -> Documents
+[2026-06-17 23:11:30] 🎉 AUTOMATION: Sorted basic-text_2.pdf -> Documents
+[2026-06-17 23:11:31] 🎉 AUTOMATION: Sorted basic-text_3.pdf -> Documents
+[2026-06-17 23:11:32] 🎉 AUTOMATION: Sorted CamScanner 05-06-2026 12.55.pdf -> Documents
+[2026-06-17 23:11:33] 🎉 AUTOMATION: Sorted coffee-green-hd-png.png -> Pictures
+[2026-06-17 23:11:34] 🎉 AUTOMATION: Sorted declaration.pdf -> Documents
+[2026-06-17 23:11:36] 🎉 AUTOMATION: Sorted eparavolo (1).pdf -> Documents
+[2026-06-17 23:11:37] 🎉 AUTOMATION: Sorted eparavolo (2).pdf -> Documents
+[2026-06-17 23:11:38] 🎉 AUTOMATION: Sorted eparavolo (3).pdf -> Documents
+[2026-06-17 23:11:39] 🎉 AUTOMATION: Sorted eparavolo.pdf -> Documents
+[2026-06-17 23:11:41] 🎉 AUTOMATION: Sorted folder.png -> Pictures
+[2026-06-17 23:11:44] 🎉 AUTOMATION: Sorted IMG-040ef2d1ce15a1ffd87a3e27ca23bf73-V.jpg -> Pictures
+[2026-06-17 23:11:45] 🎉 AUTOMATION: Sorted IMG-1b25ff905c34671230beeac19192597c-V.jpg -> Pictures
+[2026-06-17 23:11:46] 🎉 AUTOMATION: Sorted pexels-steve-12843342.jpg -> Pictures
+[2026-06-17 23:11:47] 🎉 AUTOMATION: Sorted pexels-tara-winstead-7111494.jpg -> Pictures
+[2026-06-17 23:11:49] 🎉 AUTOMATION: Sorted sample-3.pdf -> Documents
+[2026-06-17 23:11:50] 🎉 AUTOMATION: Sorted sample-5.pdf -> Documents
+[2026-06-17 23:11:51] 🎉 AUTOMATION: Sorted sample-pdf-a4-size-65kb.pdf -> Documents
+[2026-06-17 23:11:52] 🎉 AUTOMATION: Sorted sample-pdf-a4-size-65kb_1.pdf -> Documents
+[2026-06-17 23:11:53] 🎉 AUTOMATION: Sorted sample-pdf-a4-size.pdf -> Documents
+[2026-06-17 23:11:54] 🎉 AUTOMATION: Sorted sample-pdf-a4-size_1.pdf -> Documents
+[2026-06-17 23:11:55] 🎉 AUTOMATION: Sorted sample-pdf-letter-size.pdf -> Documents
+[2026-06-17 23:11:56] 🎉 AUTOMATION: Sorted sample-pdf-letter-size_1.pdf -> Documents
+[2026-06-17 23:11:57] 🎉 AUTOMATION: Sorted sample-text-only-pdf-a4-size.pdf -> Documents
+[2026-06-17 23:11:58] 🎉 AUTOMATION: Sorted sample-text-only-pdf-a4-size_1.pdf -> Documents
+[2026-06-17 23:11:59] 🎉 AUTOMATION: Sorted sample-text-only-pdf-a4-size_2.pdf -> Documents
+[2026-06-17 23:12:00] 🎉 AUTOMATION: Sorted sample_report.pdf -> Documents
+[2026-06-17 23:12:01] 🎉 AUTOMATION: Sorted ScreenRecording2026-06-07212059-ezgif.com-video-to-gif-converter.gif -> Pictures
+[2026-06-17 23:12:05] 🎉 AUTOMATION: Sorted wifi_qr_20260614_144952.png -> Pictures
+[2026-06-17 23:12:06] 🎉 AUTOMATION: Sorted wifi_qr_20260614_145544.png -> Pictures
+[2026-06-17 23:12:07] 🎉 AUTOMATION: Sorted Βεβαίωση_Προϋπηρεσίας_29068600427.pdf -> Documents
+[2026-06-17 23:12:08] 🎉 AUTOMATION: Sorted ΡΑΝΤΕΒΟΥ ΓΙΑΓΙΑ.pdf -> Documents
+[2026-06-17 23:12:09] 🎉 AUTOMATION: Sorted ΥΠΕΥΘΥΝΗ ΔΗΛΩΣΗ ΑΠΑΛΛΑΓΗΣ ΦΕΚ 4893.doc -> Documents
+[2026-06-17 23:13:47] SYSTEM: Μη αυτόματος καθαρισμός στο C:\Users\gregi\Desktop
+[2026-06-17 23:13:48] 🎉 AUTOMATION: Sorted aek-athenes-club-logo-symbol-greece-league-football-abstract-design-illustration-with-black-background-free-vector-3470908165.jpg -> Pictures
+[2026-06-17 23:13:49] 🎉 AUTOMATION: Sorted AEK-CHAMPION-1568x1045-155548020.jpg -> Pictures
+[2026-06-17 23:13:51] 🎉 AUTOMATION: Sorted declaration.pdf -> Documents
+[2026-06-17 23:13:53] 🎉 AUTOMATION: Sorted eparavolo (1).pdf -> Documents
+[2026-06-17 23:13:54] 🎉 AUTOMATION: Sorted eparavolo (2).pdf -> Documents
+[2026-06-17 23:13:55] 🎉 AUTOMATION: Sorted eparavolo (3).pdf -> Documents
+[2026-06-17 23:13:56] 🎉 AUTOMATION: Sorted eparavolo.pdf -> Documents
+[2026-06-17 23:14:00] 🎉 AUTOMATION: Sorted IMG-040ef2d1ce15a1ffd87a3e27ca23bf73-V.jpg -> Pictures
+[2026-06-17 23:14:01] 🎉 AUTOMATION: Sorted IMG-1b25ff905c34671230beeac19192597c-V.jpg -> Pictures
+[2026-06-17 23:14:02] 🎉 AUTOMATION: Sorted IMG-a5643e202c713988e98d708cf3adbd12-V.jpg -> Pictures
+[2026-06-17 23:14:03] 🎉 AUTOMATION: Sorted pexels-cup-of-couple-8015668.jpg -> Pictures
+[2026-06-17 23:14:04] 🎉 AUTOMATION: Sorted pexels-ekaterina-bolovtsova-6193145.jpg -> Pictures
+[2026-06-17 23:14:05] 🎉 AUTOMATION: Sorted pexels-markusspiske-2004161.jpg -> Pictures
+[2026-06-17 23:14:06] 🎉 AUTOMATION: Sorted pexels-steve-12843342.jpg -> Pictures
+[2026-06-17 23:14:07] 🎉 AUTOMATION: Sorted pexels-tara-winstead-7111494.jpg -> Pictures
+[2026-06-17 23:14:09] 🎉 AUTOMATION: Sorted sample-3.pdf -> Documents
+[2026-06-17 23:14:10] 🎉 AUTOMATION: Sorted sample-5.pdf -> Documents
+[2026-06-17 23:14:11] 🎉 AUTOMATION: Sorted sample-pdf-a4-size-65kb.pdf -> Documents
+[2026-06-17 23:14:12] 🎉 AUTOMATION: Sorted sample-pdf-a4-size-65kb_1.pdf -> Documents
+[2026-06-17 23:14:13] 🎉 AUTOMATION: Sorted sample-pdf-a4-size.pdf -> Documents
+[2026-06-17 23:14:14] 🎉 AUTOMATION: Sorted sample-pdf-a4-size_1.pdf -> Documents
+[2026-06-17 23:14:15] 🎉 AUTOMATION: Sorted sample-pdf-letter-size.pdf -> Documents
+[2026-06-17 23:14:16] 🎉 AUTOMATION: Sorted sample-pdf-letter-size_1.pdf -> Documents
+[2026-06-17 23:14:17] 🎉 AUTOMATION: Sorted sample-text-only-pdf-a4-size.pdf -> Documents
+[2026-06-17 23:14:18] 🎉 AUTOMATION: Sorted sample-text-only-pdf-a4-size_1.pdf -> Documents
+[2026-06-17 23:14:19] 🎉 AUTOMATION: Sorted sample-text-only-pdf-a4-size_2.pdf -> Documents
+[2026-06-17 23:14:20] 🎉 AUTOMATION: Sorted sample_report.pdf -> Documents
+[2026-06-17 23:14:21] 🎉 AUTOMATION: Sorted ScreenRecording2026-06-07212059-ezgif.com-video-to-gif-converter.gif -> Pictures
+[2026-06-17 23:14:25] 🎉 AUTOMATION: Sorted wifi_qr_20260614_144952.png -> Pictures
+[2026-06-17 23:14:26] 🎉 AUTOMATION: Sorted wifi_qr_20260614_145544.png -> Pictures
+[2026-06-17 23:14:27] 🎉 AUTOMATION: Sorted {057347C9-2E4B-49A8-821C-82BC4EFF0485}.png -> Pictures
+[2026-06-17 23:14:28] 🎉 AUTOMATION: Sorted Βεβαίωση_Προϋπηρεσίας_29068600427.pdf -> Documents

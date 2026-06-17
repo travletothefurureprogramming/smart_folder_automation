@@ -9,11 +9,11 @@ from plyer import notification
 import pystray
 from PIL import Image
 import json
-import streamlit
+from flask import Flask, render_template, jsonify
 
 observer = None
 is_tracking = False
-
+total_moved_count = 0
 user_home = os.path.expanduser('~')
 
 if os.path.exists('folder.png'):
@@ -21,7 +21,6 @@ if os.path.exists('folder.png'):
 else:
     tray_image = Image.new('RGB', (64, 64), color='blue')
 
-# --- Συναρτήσεις Διαχείρισης Κανόνων (JSON) ---
 
 def load_rules():
     if not os.path.exists('rules.json'):
@@ -54,7 +53,6 @@ def match_rule_and_get_dest(file_name):
             
     return None
 
-# --- Βοηθητικές Συναρτήσεις ---
 
 def get_unique_path(destination_folder, file_name):
     base_name, extension = os.path.splitext(file_name)
@@ -73,6 +71,8 @@ def write_log(event):
         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {event}\n")
 
 def process_file(full_path, file_name):
+    global total_moved_count
+
     _, file_extension = os.path.splitext(file_name)
 
     if file_extension in ['.tmp', '.crdownload', '.part'] or file_name.startswith('.'):
@@ -93,6 +93,8 @@ def process_file(full_path, file_name):
         try:
             shutil.move(full_path, final_path)
             folder_name = os.path.basename(dest_dir)
+
+            total_moved_count +=1
             
             notification.notify(
                 title="Smart Folder Automation",
@@ -108,16 +110,15 @@ def process_file(full_path, file_name):
             return False
     return False
 
-# --- Watchdog Handler ---
 
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
+        global total_moved_count
         if not event.is_directory:
-            full_path = event.src_path
-            file_name = os.path.basename(full_path)
-            process_file(full_path, file_name)
+            if process_file(event.src_path, os.path.basename(event.src_path)):
+                total_moved_count += 1
+                app.after(0, lambda: status_label.configure(text=f"Status: Active | Moved: {total_moved_count}"))
 
-# --- Κύρια Λογική UI Actions ---
 
 def select_folder():
     global observer, is_tracking
@@ -148,7 +149,6 @@ def select_folder():
         observer.start()
         
     else:
-        # ORGANIZE LOGIC (Manual)
         print(f"🧹 Καθαρισμός {folder} στο: {path_to_track}")
         write_log(f"SYSTEM: Μη αυτόματος καθαρισμός στο {path_to_track}")
         moved_count = 0
@@ -182,8 +182,6 @@ def stop_tracking():
 
 def thread_select_folder():
     threading.Thread(target=select_folder, daemon=True).start()
-
-# --- System Tray Logic ---
 
 def check_menu(icon, item):
     if str(item) == "Open":
@@ -240,6 +238,22 @@ def add_rules_window():
 
     app_rules.mainloop()
 
+
+server = Flask(__name__)
+
+@server.route("/")
+def dashboard():
+    return render_template("index.html")
+
+@server.route("/api/count", methods=["GET"])
+def get_count():
+    global total_moved_count
+    return jsonify({"moved_files": total_moved_count})
+
+
+def run_flask():
+    server.run(host="0.0.0.0",port=5000, use_reloader=False)
+
 app = ctk.CTk()
 
 app.title("Smart Folder Automation Hub")
@@ -266,4 +280,5 @@ status_label.pack(pady=10)
 
 if __name__ == "__main__":
     threading.Thread(target=run_tray, daemon=True).start()
+    threading.Thread(target=run_flask, daemon=True).start()
     app.mainloop()
