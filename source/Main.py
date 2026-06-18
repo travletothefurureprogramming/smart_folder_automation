@@ -9,18 +9,97 @@ from plyer import notification
 import pystray
 from PIL import Image
 import json
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template_string, jsonify
 
 observer = None
 is_tracking = False
 total_moved_count = 0
 user_home = os.path.expanduser('~')
+data_lock = threading.Lock()
+
+template = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Folder Automation Hub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.08);
+            background: white;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .metric-number {
+            font-size: 4.5rem;
+            font-weight: 700;
+            color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+<div class="container py-5">
+    <h1 class="text-center mb-5 fw-bold text-primary">
+        <i class="bi bi-cpu-fill"></i> SMART FOLDER AUTOMATION HUB
+    </h1>
+    <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-7">
+            <div class="card p-5 text-center">
+                <div class="mb-3">
+                    <span class="badge bg-primary p-3 rounded-circle">
+                        <i class="bi bi-files fs-3"></i>
+                    </span>
+                </div>
+                <h4 class="fw-semibold mb-2">Files Moved</h4>
+                <div id="count" class="metric-number">0</div>
+                <p class="text-muted small">The page refreshes automatically every 3 seconds</p>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+const SERVER = window.location.origin;
+function updateSystemInfo(){
+    fetch(`${SERVER}/api/count`)
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById("count").innerHTML = data.moved_files;
+    })
+    .catch(err => console.error("Error connecting to API:", err));
+}
+updateSystemInfo();
+setInterval(updateSystemInfo, 3000);
+</script>
+</body>
+</html>
+"""
 
 if os.path.exists('folder.png'):
     tray_image = Image.open('folder.png')
 else:
-    tray_image = Image.new('RGB', (64, 64), color='blue')
+    tray_image = Image.new('RGB', (64, 64), color=(13, 110, 253))
 
+if not os.path.exists("automation_log.txt"):
+    with open("automation_log.txt", "w", encoding="utf-8") as f:
+        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Automation log initialized.\n")
+
+def is_file_locked(filepath):
+    try:
+        with open(filepath, 'a'):
+            return False
+    except IOError:
+        return True
 
 def load_rules():
     if not os.path.exists('rules.json'):
@@ -32,10 +111,6 @@ def load_rules():
             return []
 
 def match_rule_and_get_dest(file_name):
-    """
-    Ελέγχει το αρχείο με βάση όλους τους κανόνες και επιστρέφει 
-    τον προορισμό και τον τύπο του κανόνα που ταίριαξε.
-    """
     rules = load_rules()
     base_name, file_extension = os.path.splitext(file_name)
     
@@ -48,11 +123,10 @@ def match_rule_and_get_dest(file_name):
             return rule['destination']
             
     for rule in rules:
-        if rule.get('condition') == 'extension' and rule['value'] == file_extension:
+        if rule.get('condition') == 'extension' and rule['value'].lower() == file_extension.lower():
             return rule['destination']
             
     return None
-
 
 def get_unique_path(destination_folder, file_name):
     base_name, extension = os.path.splitext(file_name)
@@ -67,19 +141,24 @@ def get_unique_path(destination_folder, file_name):
     return destination_path
 
 def write_log(event):
-    with open("automation_log.txt", 'a', encoding="utf-8") as f:
-        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {event}\n")
+    with data_lock:
+        with open("automation_log.txt", 'a', encoding="utf-8") as f:
+            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {event}\n")
 
 def process_file(full_path, file_name):
     global total_moved_count
 
     _, file_extension = os.path.splitext(file_name)
 
-    if file_extension in ['.tmp', '.crdownload', '.part'] or file_name.startswith('.'):
+    if file_extension.lower() in ['.tmp', '.crdownload', '.part'] or file_name.startswith('.'):
         return False
 
-    time.sleep(1) 
+    time.sleep(1.5)
     if not os.path.exists(full_path):
+        return False
+        
+    if is_file_locked(full_path):
+        print(f"⏳ File {file_name} is locked. Waiting...")
         return False
 
     destination_rel = match_rule_and_get_dest(file_name)
@@ -87,46 +166,51 @@ def process_file(full_path, file_name):
     if destination_rel:
         dest_dir = os.path.join(user_home, destination_rel)
         if not os.path.exists(dest_dir):
-            os.makedirs(dest_dir)
+            try:
+                os.makedirs(dest_dir)
+            except Exception as e:
+                print(f"❌ Failed to create directory {dest_dir}: {e}")
+                return False
             
         final_path = get_unique_path(dest_dir, file_name)
         try:
             shutil.move(full_path, final_path)
             folder_name = os.path.basename(dest_dir)
 
-            total_moved_count +=1
+            with data_lock:
+                total_moved_count += 1
             
             notification.notify(
                 title="Smart Folder Automation",
-                message=f"🎉 File {file_name} moved to {folder_name}!",
+                message=f"🎉 File {file_name} was moved to folder {folder_name}!",
                 app_name="FolderApp",
-                timeout=5 
+                timeout=4
             )            
-            write_log(f"🎉 AUTOMATION: Sorted {file_name} -> {folder_name}")
+            write_log(f"AUTOMATION: Sorted {file_name} -> {folder_name}")
             print(f"🎉 New file sorted: {os.path.basename(final_path)}")
             return True
         except Exception as e:
-            print(f"❌ Error while moving {file_name}: {e}")
+            print(f"❌ Error moving {file_name}: {e}")
             return False
     return False
-
 
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
         global total_moved_count
         if not event.is_directory:
-            if process_file(event.src_path, os.path.basename(event.src_path)):
-                total_moved_count += 1
-                app.after(0, lambda: status_label.configure(text=f"Status: Active | Moved: {total_moved_count}"))
-
+            file_name = os.path.basename(event.src_path)
+            if process_file(event.src_path, file_name):
+                app.after(0, lambda: status_label.configure(
+                    text=f"Status: Active | Moved: {total_moved_count}"
+                ))
 
 def select_folder():
     global observer, is_tracking
     folder = select_folder_option.get()
-    action = select_action.get()
     path_to_track = os.path.join(user_home, folder)
+    action = select_action.get()
     
-    if action == "Track":
+    if action == "Live Track":
         if is_tracking:
             print("⚠️ Tracking is already running!")
             return
@@ -140,18 +224,23 @@ def select_folder():
         
         notification.notify(
             title="Smart Folder Automation",
-            message=f"🚀 Live tracking of {folder} started!",
+            message=f"🚀 Tracking started for folder {folder}!",
             timeout=3
         )
         
         is_tracking = True
-        status_label.configure(text=f"Status: Tracking {folder}", text_color="green")
+        status_label.configure(text=f"Status: Tracking {folder}", text_color="#198754")
         observer.start()
         
     else:
-        print(f"🧹 Καθαρισμός {folder} στο: {path_to_track}")
-        write_log(f"SYSTEM: Μη αυτόματος καθαρισμός στο {path_to_track}")
+        print(f"🧹 Manual cleanup of {folder} at: {path_to_track}")
+        write_log(f"SYSTEM: Manual cleanup at {path_to_track}")
         moved_count = 0
+
+        if not os.path.exists(path_to_track):
+            print(f"❌ Folder {path_to_track} does not exist.")
+            status_label.configure(text="Status: Folder Error", text_color="red")
+            return
 
         try:
             for entry in os.scandir(path_to_track):
@@ -159,14 +248,14 @@ def select_folder():
                     if process_file(entry.path, entry.name):
                         moved_count += 1
         except Exception as e:
-            print(f"❌ Error while reading folder: {e}")
+            print(f"❌ Error reading folder: {e}")
         
         notification.notify(
-            title=f"{folder} Cleaned!",
-            message=f"🧹 Cleaning complete. Moved {moved_count} files!",
+            title=f"Cleanup {folder}!",
+            message=f"🧹 Cleanup complete. Moved {moved_count} files!",
             timeout=5
         )
-        status_label.configure(text="Status: Clean Finished", text_color="blue")
+        status_label.configure(text=f"Status: Completed (Moved {moved_count})", text_color="#0d6efd")
 
 def stop_tracking():
     global observer, is_tracking
@@ -175,8 +264,8 @@ def stop_tracking():
         observer.stop()
         observer.join()
         print("🛑 Tracking stopped.")
-        write_log("SYSTEM: Tracking stopped by user.")
-        status_label.configure(text="Status: Stopped", text_color="red")
+        write_log("SYSTEM: Tracking terminated by user.")
+        status_label.configure(text="Status: Stopped", text_color="#dc3545")
     else:
         print("⚠️ No active tracking to stop.")
 
@@ -192,7 +281,10 @@ def check_menu(icon, item):
         app.quit()
 
 def run_tray():
-    menu = pystray.Menu(pystray.MenuItem("Open", check_menu), pystray.MenuItem("Exit", check_menu))
+    menu = pystray.Menu(
+        pystray.MenuItem("Open", check_menu), 
+        pystray.MenuItem("Exit", check_menu)
+    )
     icon = pystray.Icon("FolderOrganizer", tray_image, "Folder Organizer", menu)
     icon.run()
 
@@ -207,76 +299,144 @@ def withdraw_window():
 def add_rules_window():
     def add_rules():
         condition = select_condition.get()
-        value = select_value.get()
-        destination = select_destination.get()
+        value = select_value.get().strip()
+        destination = select_destination.get().strip()
 
-        data = {"condition": condition, "value": value,"destination": destination}
+        if not value or not destination:
+            print("⚠️ Please fill in all fields!")
+            return
 
-        with open("rules.json", "r", encoding="utf-8") as file:
-            rules = json.load(file)
+        data = {"condition": condition, "value": value, "destination": destination}
 
-        rules.append(data)
+        with data_lock:
+            rules = []
+            if os.path.exists("rules.json"):
+                with open("rules.json", "r", encoding="utf-8") as file:
+                    try:
+                        rules = json.load(file)
+                    except json.JSONDecodeError:
+                        rules = []
 
-        with open('rules.json', "w", encoding="utf-8") as file:
-            json.dump(rules, file, indent=4, ensure_ascii=False)
+            rules.append(data)
+
+            with open('rules.json', "w", encoding="utf-8") as file:
+                json.dump(rules, file, indent=4, ensure_ascii=False)
         
+        print(f"✅ Rule added: {condition} -> {value} moving to {destination}")
+        app_rules.destroy()
+
     app_rules = ctk.CTk()
-    app_rules.title("Smart Folder Automation Hub - Add Rules")
-    app_rules.geometry("350x350")
+    app_rules.title("Add Sorting Rules")
+    app_rules.geometry("380x380")
+    app_rules.resizable(False, False)
 
-    select_condition = ctk.CTkOptionMenu(app_rules, values=['extension','name_starts','name_contains'])
-    select_condition.pack(pady=20)
+    lbl_title = ctk.CTkLabel(app_rules, text="New Rule", font=("Arial", 16, "bold"))
+    lbl_title.pack(pady=15)
 
-    select_value = ctk.CTkEntry(app_rules, placeholder_text="Value: .mp3, report.......")    
-    select_value.pack(pady=20)
+    select_condition = ctk.CTkOptionMenu(
+        app_rules, 
+        values=['extension', 'name_starts', 'name_contains']
+    )
+    select_condition.pack(pady=10)
 
-    select_destination = ctk.CTkEntry(app_rules, placeholder_text="Destination folder name in User")
-    select_destination.pack(pady=20)
+    select_value = ctk.CTkEntry(
+        app_rules, 
+        placeholder_text="Value: .mp3, report, etc.", 
+        width=250
+    )    
+    select_value.pack(pady=10)
 
-    add_btn = ctk.CTkButton(app_rules, text="Add", command=add_rules)
+    select_destination = ctk.CTkEntry(
+        app_rules, 
+        placeholder_text="Destination folder name", 
+        width=250
+    )
+    select_destination.pack(pady=10)
+
+    add_btn = ctk.CTkButton(
+        app_rules, 
+        text="Save Rule", 
+        command=add_rules,
+        fg_color="#0d6efd",
+        hover_color="#0b5ed7"
+    )
     add_btn.pack(pady=20)
 
     app_rules.mainloop()
-
 
 server = Flask(__name__)
 
 @server.route("/")
 def dashboard():
-    return render_template("index.html")
+    return render_template_string(template)
 
 @server.route("/api/count", methods=["GET"])
 def get_count():
     global total_moved_count
     return jsonify({"moved_files": total_moved_count})
 
-
 def run_flask():
-    server.run(host="0.0.0.0",port=5000, use_reloader=False)
+    try:
+        server.run(host="0.0.0.0", port=5000, use_reloader=False)
+    except Exception as e:
+        print(f"❌ Error starting Flask Web Server: {e}")
 
 app = ctk.CTk()
-
 app.title("Smart Folder Automation Hub")
-app.geometry("350x350")
+app.geometry("400x480")
+app.resizable(False, False)
 app.protocol('WM_DELETE_WINDOW', withdraw_window)
 
-select_action = ctk.CTkOptionMenu(app, values=["Track", "Organize"])
-select_action.pack(pady=15)
+main_title = ctk.CTkLabel(app, text="Smart Folder Automation", font=("Arial", 18, "bold"))
+main_title.pack(pady=15)
 
+lbl_action = ctk.CTkLabel(app, text="1. Select Action:", font=("Arial", 12))
+lbl_action.pack(pady=2)
+select_action = ctk.CTkOptionMenu(app, values=["Live Track", "Clean Now"])
+select_action.pack(pady=5)
+
+lbl_folder = ctk.CTkLabel(app, text="2. Select Folder:", font=("Arial", 12))
+lbl_folder.pack(pady=2)
 select_folder_option = ctk.CTkOptionMenu(app, values=["Downloads", "Desktop"])
-select_folder_option.pack(pady=15)
+select_folder_option.pack(pady=5)
 
-add_rules_btn = ctk.CTkButton(app, text="Add Rules", command=add_rules_window)
-add_rules_btn.pack(pady=20)
+add_rules_btn = ctk.CTkButton(
+    app, 
+    text="Manage Rules", 
+    command=add_rules_window,
+    fg_color="#6c757d",
+    hover_color="#5a6268"
+)
+add_rules_btn.pack(pady=15)
 
-start_btn = ctk.CTkButton(app, text="Start Action", command=thread_select_folder, fg_color="green", hover_color="darkgreen")
-start_btn.pack(pady=10)
+start_btn = ctk.CTkButton(
+    app, 
+    text="Start Action", 
+    command=thread_select_folder, 
+    fg_color="#198754", 
+    hover_color="#157347"
+)
+start_btn.pack(pady=8)
 
-stop_btn = ctk.CTkButton(app, text="Stop Track", command=stop_tracking, fg_color="red", hover_color="darkred")
-stop_btn.pack(pady=10)
+stop_btn = ctk.CTkButton(
+    app, 
+    text="Stop Tracking", 
+    command=stop_tracking, 
+    fg_color="#dc3545", 
+    hover_color="#bb2d3b"
+)
+stop_btn.pack(pady=8)
 
 status_label = ctk.CTkLabel(app, text="Status: Idle", font=("Arial", 12, "italic"))
 status_label.pack(pady=10)
+
+dashboard_label = ctk.CTkLabel(
+    app, 
+    text="Web Dashboard: http://localhost:5000", 
+    font=("Arial", 11, "bold"),
+    text_color="#0d6efd"
+)
+dashboard_label.pack(pady=5)
 
 if __name__ == "__main__":
     threading.Thread(target=run_tray, daemon=True).start()
