@@ -40,6 +40,51 @@
    
 4. Run: python Main.py
 
+## How To Use
+
+### Clean Now
+
+Use **Clean Now** to instantly organize files that are already inside your Downloads or Desktop folder.
+
+1. Select **Clean Now**
+2. Select a folder (Downloads/Desktop)
+3. Click **Start Action**
+
+The app will scan the folder and move files according to the built-in and custom rules.
+
+---
+
+### Live Track
+
+Use **Live Track** for automatic real-time organization.
+
+1. Select **Live Track**
+2. Select a folder (Downloads/Desktop)
+3. Click **Start Action**
+
+The app will continue running in the background and automatically organize new files as they appear.
+
+Example:
+
+* PDF → Documents
+* JPG/PNG → Pictures
+* MP4 → Videos
+* MP3 → Music
+
+---
+
+### Default Rules Included
+
+The application ships with ready-to-use rules for common file types:
+
+* Documents (.pdf, .docx, .doc, .txt)
+* Pictures (.jpg, .jpeg, .png, .gif, .svg, .tif, .tiff)
+* Videos (.mp4, .avi, .mov, .wmv, .flv)
+* Music (.mp3, .wav, .flac, .aac)
+
+You can add your own custom rules anytime using the **Manage Rules** button.
+
+
 ### Key Quality of Life Improvements
 The Smart Folder Automation Hub is designed to eliminate digital clutter and streamline your workflow through three core pillars:
 
